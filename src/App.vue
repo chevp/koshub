@@ -1,6 +1,6 @@
 <template>
   <div class="shell">
-    <AppSidebar />
+    <AppNav />
     <main class="main">
       <router-view />
     </main>
@@ -8,12 +8,13 @@
 </template>
 
 <script setup lang="ts">
-import AppSidebar from '@/components/AppSidebar.vue'
+import AppNav from '@/components/AppNav.vue'
 </script>
 
 <style scoped>
 .shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
@@ -21,7 +22,7 @@ import AppSidebar from '@/components/AppSidebar.vue'
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-height: 0;
   background: var(--bg-canvas);
   overflow: hidden;
 }
