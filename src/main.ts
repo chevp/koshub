@@ -9,6 +9,7 @@ import LogsView          from './views/LogsView.vue'
 import RepositoriesView  from './views/RepositoriesView.vue'
 import ArtifactsView     from './views/ArtifactsView.vue'
 import ConfigView        from './views/ConfigView.vue'
+import DataView          from './views/DataView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/repositories',  component: RepositoriesView },
     { path: '/artifacts',     component: ArtifactsView },
     { path: '/config',        component: ConfigView },
+    { path: '/data',          component: DataView },
   ],
 })
 

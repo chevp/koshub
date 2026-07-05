@@ -231,6 +231,26 @@ if (__VLS_ctx.activeProject) {
     });
     __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
     var __VLS_23;
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: "tab-sep" },
+    });
+    const __VLS_24 = {}.RouterLink;
+    /** @type {[typeof __VLS_components.RouterLink, typeof __VLS_components.routerLink, typeof __VLS_components.RouterLink, typeof __VLS_components.routerLink, ]} */ ;
+    // @ts-ignore
+    const __VLS_25 = __VLS_asFunctionalComponent(__VLS_24, new __VLS_24({
+        ...{ class: "tab" },
+        to: "/data",
+    }));
+    const __VLS_26 = __VLS_25({
+        ...{ class: "tab" },
+        to: "/data",
+    }, ...__VLS_functionalComponentArgsRest(__VLS_25));
+    __VLS_27.slots.default;
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.i, __VLS_intrinsicElements.i)({
+        ...{ class: "fa-solid fa-table" },
+    });
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
+    var __VLS_27;
 }
 /** @type {__VLS_StyleScopedClasses['nav-shell']} */ ;
 /** @type {__VLS_StyleScopedClasses['topbar']} */ ;
@@ -280,6 +300,10 @@ if (__VLS_ctx.activeProject) {
 /** @type {__VLS_StyleScopedClasses['tab']} */ ;
 /** @type {__VLS_StyleScopedClasses['fa-solid']} */ ;
 /** @type {__VLS_StyleScopedClasses['fa-sliders']} */ ;
+/** @type {__VLS_StyleScopedClasses['tab-sep']} */ ;
+/** @type {__VLS_StyleScopedClasses['tab']} */ ;
+/** @type {__VLS_StyleScopedClasses['fa-solid']} */ ;
+/** @type {__VLS_StyleScopedClasses['fa-table']} */ ;
 var __VLS_dollars;
 const __VLS_self = (await import('vue')).defineComponent({
     setup() {

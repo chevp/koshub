@@ -14,7 +14,7 @@ import AppNav from '@/components/AppNav.vue'
 <style scoped>
 .shell {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
   overflow: hidden;
 }
@@ -22,8 +22,8 @@ import AppNav from '@/components/AppNav.vue'
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  background: var(--bg-canvas);
+  min-width: 0;
   overflow: hidden;
+  background: var(--bg-canvas);
 }
 </style>

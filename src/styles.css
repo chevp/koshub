@@ -15,10 +15,14 @@
   --text-secondary: #c9ccd1;
   --text-muted:     #8e8e8e;
 
-  --accent:       #9b8cdf;
+  --accent:        #9b8cdf;
   --accent-strong: #6f5fb8;
-  --accent-soft:  #c8bef0;
-  --accent-bg:    rgba(140, 130, 220, 0.14);
+  --accent-soft:   #c8bef0;
+  --accent-bg:     rgba(140, 130, 220, 0.14);
+  --accent-text:   #0d1117;
+
+  --play-accent:    #f5b76b;
+  --play-accent-bg: rgba(245, 183, 107, 0.12);
 
   --green:    #4ade80;
   --orange:   #fb923c;
