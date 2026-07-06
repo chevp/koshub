@@ -9,6 +9,9 @@
       <div class="nav-section">
         <div class="nav-label">Projects</div>
         <div class="ws-list">
+          <div v-if="loading" class="ws-empty">Loading…</div>
+          <div v-else-if="loadError" class="ws-empty err">{{ loadError }}</div>
+
           <div
             v-for="p in projects"
             :key="p.id"
@@ -16,16 +19,24 @@
             :class="{ active: p.id === activeProjectId }"
             @contextmenu.prevent="openMenu(p, $event)"
           >
-            <button class="ws-row-main" type="button" :title="p.namespace + '/' + p.name" @click="select(p.id)">
+            <button class="ws-row-main" type="button"
+                    :title="p.namespace + '/' + p.name"
+                    @click="open(p.id)">
               <i class="fa-regular fa-folder"></i>
               <span class="ws-row-name">{{ p.name }}</span>
+              <span class="ws-row-ns">{{ p.namespace }}</span>
             </button>
-            <button class="ws-row-menu" type="button" title="Project settings" @click.stop="openMenu(p, $event)">
+            <button class="ws-row-menu" type="button" title="Project options"
+                    @click.stop="openMenu(p, $event)">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
           </div>
-          <div v-if="!projects.length" class="ws-empty">No projects yet.</div>
-          <button class="add-project" type="button">
+
+          <div v-if="!loading && !loadError && !projects.length" class="ws-empty">
+            No projects yet.
+          </div>
+
+          <button class="add-project" type="button" @click="showAdd = true">
             <i class="fa-solid fa-plus"></i>
             <span>Add Project…</span>
           </button>
@@ -35,43 +46,36 @@
       <!-- Monitoring -->
       <div class="nav-section">
         <div class="nav-label">Monitoring</div>
-        <router-link class="nav-item" to="/dashboard">
-          <i class="fa-solid fa-gauge-high"></i>
-          <span>Dashboard</span>
+        <router-link class="nav-item" :to="route('dashboard')">
+          <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </router-link>
-        <router-link class="nav-item" to="/services">
-          <i class="fa-solid fa-cubes"></i>
-          <span>Services</span>
+        <router-link class="nav-item" :to="route('services')">
+          <i class="fa-solid fa-cubes"></i><span>Services</span>
         </router-link>
-        <router-link class="nav-item" to="/logs">
-          <i class="fa-solid fa-terminal"></i>
-          <span>Logs</span>
+        <router-link class="nav-item" :to="route('logs')">
+          <i class="fa-solid fa-terminal"></i><span>Logs</span>
         </router-link>
       </div>
 
       <!-- Registry -->
       <div class="nav-section">
         <div class="nav-label">Registry</div>
-        <router-link class="nav-item" to="/repositories">
-          <i class="fa-solid fa-database"></i>
-          <span>Repositories</span>
+        <router-link class="nav-item" :to="route('repositories')">
+          <i class="fa-solid fa-database"></i><span>Repositories</span>
         </router-link>
-        <router-link class="nav-item" to="/artifacts">
-          <i class="fa-solid fa-boxes-stacked"></i>
-          <span>Artifacts</span>
+        <router-link class="nav-item" :to="route('artifacts')">
+          <i class="fa-solid fa-boxes-stacked"></i><span>Artifacts</span>
         </router-link>
       </div>
 
       <!-- Configuration -->
       <div class="nav-section">
         <div class="nav-label">Configuration</div>
-        <router-link class="nav-item" to="/config">
-          <i class="fa-solid fa-sliders"></i>
-          <span>Config</span>
+        <router-link class="nav-item" :to="route('config')">
+          <i class="fa-solid fa-sliders"></i><span>Config</span>
         </router-link>
-        <router-link class="nav-item" to="/data">
-          <i class="fa-solid fa-table"></i>
-          <span>Data</span>
+        <router-link class="nav-item" :to="route('data')">
+          <i class="fa-solid fa-table"></i><span>Data</span>
         </router-link>
       </div>
     </nav>
@@ -86,67 +90,73 @@
 
   <!-- Context menu -->
   <div v-if="menu" class="ctx-menu" :style="{ left: menu.x + 'px', top: menu.y + 'px' }">
-    <button class="ctx-item" type="button" @click="select(menu.project.id); closeMenu()">
+    <button class="ctx-item" type="button" @click="open(menu.project.id); closeMenu()">
       <i class="fa-regular fa-folder-open"></i><span>Open</span>
     </button>
-    <button class="ctx-item" type="button" @click="closeMenu()">
-      <i class="fa-regular fa-copy"></i><span>Copy Path</span>
-    </button>
-    <button class="ctx-item" type="button" @click="closeMenu()">
-      <i class="fa-solid fa-gear"></i><span>Project Settings…</span>
-    </button>
     <div class="ctx-sep"></div>
-    <button class="ctx-item danger" type="button" @click="removeProject(menu.project.id)">
-      <i class="fa-regular fa-trash-can"></i><span>Remove from list</span>
+    <button class="ctx-item danger" type="button" @click="del(menu.project.id)">
+      <i class="fa-regular fa-trash-can"></i><span>Remove</span>
     </button>
   </div>
+
+  <!-- Add Project Modal -->
+  <AddProjectModal
+    v-if="showAdd"
+    @close="showAdd = false"
+    @created="onCreated"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import AddProjectModal from './AddProjectModal.vue'
+import {
+  projects, activeProjectId, loading, loadError,
+  loadProjects, selectProject, removeProject,
+} from '../stores/project'
+import type { ProjectSummary } from '../api/kosServices'
 
-interface Project {
-  id: string
-  name: string
-  namespace: string
+const router = useRouter()
+const showAdd = ref(false)
+
+onMounted(() => {
+  loadProjects()
+  document.addEventListener('click', onClickOutside, true)
+})
+onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
+
+function route(view: string): string {
+  return activeProjectId.value
+    ? `/projects/${activeProjectId.value}/${view}`
+    : '/projects'
 }
 
-const projects = ref<Project[]>([
-  { id: 'kosmos-prod', name: 'kosmos-prod', namespace: 'dev.kosmos' },
-  { id: 'kosmos-dev',  name: 'kosmos-dev',  namespace: 'dev.kosmos' },
-  { id: 'iris-engine', name: 'iris-engine', namespace: 'dev.kosmos' },
-])
-
-const activeProjectId = ref<string>(
-  localStorage.getItem('koshub.activeProject') ?? projects.value[0]?.id ?? ''
-)
-
-function select(id: string) {
-  activeProjectId.value = id
-  localStorage.setItem('koshub.activeProject', id)
+function open(id: string) {
+  selectProject(id)
+  router.push(`/projects/${id}/dashboard`)
   closeMenu()
 }
 
-function removeProject(id: string) {
-  projects.value = projects.value.filter(p => p.id !== id)
-  if (activeProjectId.value === id) {
-    activeProjectId.value = projects.value[0]?.id ?? ''
-  }
+async function del(id: string) {
   closeMenu()
+  await removeProject(id)
+  if (!activeProjectId.value) router.push('/projects')
 }
 
-interface MenuState { project: Project; x: number; y: number }
+function onCreated(id: string) {
+  showAdd.value = false
+  router.push(`/projects/${id}/dashboard`)
+}
+
+interface MenuState { project: ProjectSummary; x: number; y: number }
 const menu = ref<MenuState | null>(null)
 
-function openMenu(project: Project, e: MouseEvent) {
+function openMenu(project: ProjectSummary, e: MouseEvent) {
   menu.value = { project, x: e.clientX, y: e.clientY }
 }
 function closeMenu() { menu.value = null }
-
 function onClickOutside() { if (menu.value) closeMenu() }
-
-onMounted(()   => document.addEventListener('click', onClickOutside, true))
-onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
 </script>
 
 <style scoped>
@@ -160,27 +170,12 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   border-right: 1px solid var(--border);
 }
 
-/* ── Brand ─────────────────────────────────────────────────── */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 14px 12px;
   border-bottom: 1px solid var(--border);
-}
-
-.brand-logo {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #c8bef0 0%, var(--accent) 45%, var(--accent-strong) 100%);
-  color: var(--accent-text);
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1px rgba(140, 130, 220, 0.25), 0 0 14px -2px rgba(140, 130, 220, 0.45);
 }
 
 .brand-name {
@@ -190,7 +185,6 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   color: var(--text);
 }
 
-/* ── Scroll area ────────────────────────────────────────────── */
 .sidebar-scroll {
   flex: 1;
   overflow-y: auto;
@@ -200,9 +194,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   flex-direction: column;
   gap: 14px;
 }
-.sidebar-scroll::-webkit-scrollbar-corner { background: transparent; }
 
-/* ── Sections ───────────────────────────────────────────────── */
 .nav-section { display: flex; flex-direction: column; gap: 2px; }
 
 .nav-label {
@@ -214,7 +206,6 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   text-transform: uppercase;
 }
 
-/* ── Nav items (router-link + buttons) ──────────────────────── */
 .nav-item {
   display: flex;
   align-items: center;
@@ -231,20 +222,12 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   cursor: pointer;
   width: 100%;
   transition: background 0.1s, color 0.1s;
+  &:hover { background: var(--bg-hover); color: var(--text); }
+  &.router-link-active { background: var(--bg-active); color: var(--text); }
+  i { font-size: 12px; opacity: 0.75; width: 14px; text-align: center; }
+  &.router-link-active i, &:hover i { color: var(--accent); opacity: 1; }
 }
-.nav-item:hover { background: var(--bg-hover); color: var(--text); }
-.nav-item.router-link-active { background: var(--bg-active); color: var(--text); }
 
-.nav-item i {
-  font-size: 12px;
-  opacity: 0.75;
-  width: 14px;
-  text-align: center;
-}
-.nav-item.router-link-active i,
-.nav-item:hover i { color: var(--accent); opacity: 1; }
-
-/* ── Project list ───────────────────────────────────────────── */
 .ws-list { display: flex; flex-direction: column; gap: 2px; }
 
 .ws-row {
@@ -252,10 +235,10 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   align-items: center;
   border-radius: var(--radius-sm);
   transition: background 0.1s;
+  &:hover { background: var(--bg-hover); }
+  &:hover .ws-row-menu { opacity: 1; }
+  &.active .ws-row-name { color: var(--accent); }
 }
-.ws-row:hover { background: var(--bg-hover); }
-.ws-row:hover .ws-row-menu { opacity: 1; }
-.ws-row.active .ws-row-name { color: var(--text); }
 
 .ws-row-main {
   display: flex;
@@ -270,8 +253,8 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  i { font-size: 12px; width: 14px; color: var(--text-muted); flex-shrink: 0; }
 }
-.ws-row-main i { font-size: 12px; width: 14px; color: var(--text-muted); }
 
 .ws-row-name {
   font-size: 13px;
@@ -280,6 +263,15 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-row-ns {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ws-row-menu {
@@ -293,14 +285,15 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   cursor: pointer;
   opacity: 0.45;
   transition: opacity 0.1s, color 0.1s, background 0.1s;
+  &:hover { color: var(--text); background: var(--bg-active); opacity: 1; }
+  i { font-size: 12px; }
 }
-.ws-row-menu:hover { color: var(--text); background: var(--bg-active); opacity: 1; }
-.ws-row-menu i { font-size: 12px; }
 
 .ws-empty {
   padding: 6px 10px;
   font-size: 12px;
   color: var(--text-muted);
+  &.err { color: var(--red); }
 }
 
 .add-project {
@@ -318,11 +311,10 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   font-family: inherit;
   cursor: pointer;
   transition: color 0.1s, border-color 0.1s, background 0.1s;
+  i { font-size: 11px; width: 14px; }
+  &:hover { color: var(--text); border-color: var(--accent); background: var(--bg-hover); }
 }
-.add-project i { font-size: 11px; width: 14px; }
-.add-project:hover { color: var(--text); border-color: var(--accent); background: var(--bg-hover); }
 
-/* ── Bottom ─────────────────────────────────────────────────── */
 .sidebar-bottom {
   border-top: 1px solid var(--border);
   padding: 8px;
@@ -331,11 +323,10 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   gap: 2px;
 }
 
-/* ── Context menu ───────────────────────────────────────────── */
 .ctx-menu {
   position: fixed;
   z-index: 1000;
-  min-width: 200px;
+  min-width: 180px;
   padding: 3px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -361,17 +352,12 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside, true))
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
   width: 100%;
+  i { width: 14px; font-size: 12px; text-align: center; opacity: 0.8; }
+  &:hover { background: var(--accent); color: #fff; }
+  &:hover i { opacity: 1; }
+  &.danger { color: var(--red); }
+  &.danger:hover { background: var(--red); color: #fff; }
 }
-.ctx-item i { width: 14px; font-size: 12px; text-align: center; opacity: 0.8; }
-.ctx-item:hover { background: var(--accent); color: #fff; }
-.ctx-item:hover i { opacity: 1; }
 
-.ctx-item.danger { color: var(--red); }
-.ctx-item.danger:hover { background: var(--red); color: #fff; }
-
-.ctx-sep {
-  height: 1px;
-  margin: 3px 6px;
-  background: var(--border);
-}
+.ctx-sep { height: 1px; margin: 3px 6px; background: var(--border); }
 </style>
