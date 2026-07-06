@@ -1,4 +1,4 @@
-const BASE = (import.meta.env.VITE_KOS_SERVICES_URL as string | undefined) ?? 'http://localhost:8080'
+const BASE = (import.meta.env.VITE_KOS_SERVICES_URL as string | undefined) ?? ''
 
 export interface Project {
   id: string

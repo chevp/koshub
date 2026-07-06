@@ -10,11 +10,11 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:8090',
-        rewrite: path => path.replace(/^\/api/, ''),
-        headers: { 'X-Api-Key': 'dev-kosmos-key' },
+        target: 'http://localhost:8085',
+        changeOrigin: true,
       },
     },
   },
