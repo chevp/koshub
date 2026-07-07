@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div class="page-head">
-      <h1 class="page-title">Projects</h1>
+      <h1 class="page-title">Workspaces</h1>
       <button class="btn-primary" type="button" @click="showAdd = true">
         <i class="fa-solid fa-plus"></i>
         <span>Add Project</span>

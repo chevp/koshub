@@ -7,7 +7,7 @@
     <nav class="sidebar-scroll">
       <!-- Projects -->
       <div class="nav-section">
-        <div class="nav-label">Projects</div>
+        <div class="nav-label">Workspaces</div>
         <div class="ws-list">
           <div v-if="loading" class="ws-empty">Loading…</div>
           <div v-else-if="loadError" class="ws-empty err">{{ loadError }}</div>
